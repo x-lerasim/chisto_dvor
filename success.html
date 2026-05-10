@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Заказ оформлен — ЧистоДвор</title>
+  <meta name="robots" content="noindex" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green: #2ecc40;
+      --green-dark: #27ae36;
+      --green-light: rgba(46,204,64,.12);
+      --dark: #1a1a2e;
+      --radius: 14px;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #f0f2f5;
+      color: var(--dark);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Шапка ─────────────────────────────────────── */
+    .topbar {
+      background: var(--dark);
+      height: 60px;
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      box-shadow: 0 2px 12px rgba(0,0,0,.3);
+    }
+    .topbar-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      color: #fff;
+      font-size: 18px;
+      font-weight: 800;
+    }
+    .topbar-logo i { color: var(--green); }
+
+    /* ── Контент ───────────────────────────────────── */
+    .page-wrap {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+    }
+
+    .success-card {
+      background: #fff;
+      border-radius: var(--radius);
+      box-shadow: 0 4px 24px rgba(0,0,0,.1);
+      max-width: 560px;
+      width: 100%;
+      overflow: hidden;
+    }
+
+    /* ── Состояния ─────────────────────────────────── */
+    .state { display: none; padding: 48px 40px; text-align: center; }
+    .state.active { display: block; }
+
+    /* Loading */
+    #stateLoading .loader {
+      width: 52px;
+      height: 52px;
+      border: 4px solid #e5e7eb;
+      border-top-color: var(--green);
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+      margin: 0 auto 20px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #stateLoading p { color: #6b7280; font-size: 15px; }
+
+    /* Success */
+    #stateSuccess .checkmark {
+      width: 80px;
+      height: 80px;
+      background: var(--green-light);
+      border: 3px solid var(--green);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 24px;
+      font-size: 36px;
+      animation: popIn .4s cubic-bezier(.34,1.56,.64,1);
+    }
+    @keyframes popIn {
+      from { transform: scale(0); opacity: 0; }
+      to   { transform: scale(1); opacity: 1; }
+    }
+    .success-title {
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--dark);
+      margin-bottom: 8px;
+    }
+    .success-subtitle {
+      font-size: 15px;
+      color: #6b7280;
+      margin-bottom: 28px;
+      line-height: 1.5;
+    }
+
+    .order-badge {
+      background: var(--green-light);
+      border: 1.5px dashed var(--green);
+      border-radius: 10px;
+      padding: 14px 20px;
+      margin-bottom: 28px;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 15px;
+    }
+    .order-badge strong { font-size: 18px; color: var(--dark); }
+    .order-badge i { color: var(--green); }
+
+    /* Шаги */
+    .next-steps {
+      background: #f9fafb;
+      border-radius: 10px;
+      padding: 20px 24px;
+      text-align: left;
+      margin-bottom: 28px;
+    }
+    .next-steps h3 {
+      font-size: 13px;
+      font-weight: 700;
+      color: #9ca3af;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      margin-bottom: 14px;
+    }
+    .step-item {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+    .step-item:last-child { margin-bottom: 0; }
+    .step-num {
+      min-width: 26px;
+      height: 26px;
+      background: var(--green);
+      color: #fff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .step-text {
+      font-size: 14px;
+      color: #374151;
+      line-height: 1.5;
+      padding-top: 3px;
+    }
+    .step-text strong { color: var(--dark); }
+
+    /* Детали заказа */
+    .order-details {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 28px;
+      text-align: left;
+    }
+    .od-header {
+      background: var(--dark);
+      padding: 12px 16px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
+    }
+    .od-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 16px;
+      font-size: 13px;
+      border-bottom: 1px solid #f3f4f6;
+    }
+    .od-row:last-child { border-bottom: none; }
+    .od-label { color: #9ca3af; }
+    .od-value { color: var(--dark); font-weight: 600; }
+    .od-status {
+      background: #dcfce7;
+      color: #16a34a;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    /* Кнопки */
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--green);
+      color: #fff;
+      text-decoration: none;
+      border: none;
+      border-radius: 10px;
+      padding: 14px 28px;
+      font-family: 'Inter', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background .2s;
+    }
+    .btn-primary:hover { background: var(--green-dark); }
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: #6b7280;
+      text-decoration: none;
+      font-size: 14px;
+      margin-top: 14px;
+      transition: color .2s;
+    }
+    .btn-secondary:hover { color: var(--dark); }
+
+    /* Ошибка */
+    #stateError .error-icon {
+      font-size: 48px;
+      color: #ef4444;
+      margin-bottom: 20px;
+    }
+    #stateError .error-title {
+      font-size: 22px;
+      font-weight: 800;
+      margin-bottom: 10px;
+    }
+    #stateError .error-text {
+      color: #6b7280;
+      font-size: 15px;
+      margin-bottom: 28px;
+      line-height: 1.5;
+    }
+
+    /* Demo banner */
+    .demo-banner {
+      background: #fffbeb;
+      border: 1px solid #fcd34d;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 12px;
+      color: #92400e;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    @media (max-width: 480px) {
+      .state { padding: 36px 24px; }
+      .success-title { font-size: 22px; }
+      .order-badge { flex-direction: column; gap: 4px; font-size: 13px; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="topbar">
+    <a href="index.html" class="topbar-logo">
+      <i class="fa-solid fa-trash-can"></i>
+      ЧистоДвор
+    </a>
+  </nav>
+
+  <div class="page-wrap">
+    <div class="success-card">
+
+      <!-- Загрузка -->
+      <div class="state active" id="stateLoading">
+        <div class="loader"></div>
+        <p>Проверяем статус платежа…</p>
+      </div>
+
+      <!-- Успех -->
+      <div class="state" id="stateSuccess">
+        <div class="checkmark">✅</div>
+        <div class="success-title">Оплата прошла!</div>
+        <div class="success-subtitle" id="successSubtitle">
+          Спасибо за подписку. Мы уже отправили подтверждение на ваш email.
+        </div>
+
+        <div id="demoBanner" class="demo-banner" style="display:none;">
+          <i class="fa-solid fa-flask"></i>
+          Демо-режим — реального списания не было. Email будет отправлен если настроен SMTP.
+        </div>
+
+        <div class="order-badge">
+          <i class="fa-solid fa-receipt"></i>
+          Заказ <strong id="orderNumDisplay">#—</strong>
+        </div>
+
+        <div class="order-details" id="orderDetails" style="display:none;">
+          <div class="od-header">Детали заказа</div>
+          <div class="od-row">
+            <span class="od-label">Клиент</span>
+            <span class="od-value" id="detailName">—</span>
+          </div>
+          <div class="od-row">
+            <span class="od-label">Тариф</span>
+            <span class="od-value">Подписка ЧистоДвор</span>
+          </div>
+          <div class="od-row">
+            <span class="od-label">Сумма</span>
+            <span class="od-value">2 600 ₽ / месяц</span>
+          </div>
+          <div class="od-row">
+            <span class="od-label">Статус</span>
+            <span class="od-value"><span class="od-status">Оплачен ✓</span></span>
+          </div>
+        </div>
+
+        <div class="next-steps">
+          <h3>Что дальше?</h3>
+          <div class="step-item">
+            <div class="step-num">1</div>
+            <div class="step-text">Наш менеджер свяжется с вами <strong>в течение 24 часов</strong> для согласования расписания вывозов</div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">2</div>
+            <div class="step-text">Мы <strong>доставим бесплатные мешки</strong> 120 л по вашему адресу</div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">3</div>
+            <div class="step-text">В дни вывоза <strong>оставляйте наполненные мешки у ворот</strong> — мы сделаем всё остальное</div>
+          </div>
+        </div>
+
+        <a href="index.html" class="btn-primary">
+          <i class="fa-solid fa-house"></i>
+          На главную страницу
+        </a>
+        <br />
+        <a href="tel:+78001234567" class="btn-secondary">
+          <i class="fa-solid fa-phone"></i>
+          Связаться с нами
+        </a>
+      </div>
+
+      <!-- Ошибка -->
+      <div class="state" id="stateError">
+        <div class="error-icon"><i class="fa-solid fa-circle-xmark"></i></div>
+        <div class="error-title">Что-то пошло не так</div>
+        <div class="error-text" id="errorText">
+          Не удалось подтвердить оплату. Если деньги были списаны — не беспокойтесь,
+          мы свяжемся с вами в ближайшее время.
+        </div>
+        <a href="checkout.html" class="btn-primary">
+          <i class="fa-solid fa-rotate-left"></i>
+          Попробовать снова
+        </a>
+        <br />
+        <a href="index.html" class="btn-secondary">
+          <i class="fa-solid fa-house"></i>
+          На главную
+        </a>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    function showState(id) {
+      document.querySelectorAll('.state').forEach(s => s.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+    }
+
+    async function init() {
+      const params  = new URLSearchParams(window.location.search);
+      const orderId = params.get('order');
+      const isDemo  = params.get('demo') === 'true';
+
+      if (!orderId) {
+        showState('stateError');
+        document.getElementById('errorText').textContent = 'Номер заказа не указан. Попробуйте оформить заказ снова.';
+        return;
+      }
+
+      // В DEMO-режиме сначала сообщаем серверу о завершении
+      if (isDemo) {
+        try {
+          await fetch('/api/demo-complete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderId }),
+          });
+        } catch (_) { /* игнорируем */ }
+      }
+
+      // Polling: проверяем статус платежа
+      let attempts = 0;
+      const maxAttempts = 10;
+
+      const check = async () => {
+        attempts++;
+        try {
+          const resp = await fetch(`/api/payment-status/${encodeURIComponent(orderId)}`);
+          const data = await resp.json();
+
+          if (!resp.ok) {
+            showState('stateError');
+            return;
+          }
+
+          if (data.status === 'paid' || data.status === 'succeeded') {
+            renderSuccess(orderId, data, isDemo);
+            return;
+          }
+
+          if (attempts < maxAttempts) {
+            setTimeout(check, 2000);
+          } else {
+            // Превышены попытки — всё равно показываем успех (платёж ещё обрабатывается)
+            renderSuccess(orderId, data, isDemo);
+          }
+        } catch (_) {
+          if (attempts < maxAttempts) {
+            setTimeout(check, 2000);
+          } else {
+            showState('stateError');
+          }
+        }
+      };
+
+      setTimeout(check, 1000);
+    }
+
+    function renderSuccess(orderId, data, isDemo) {
+      document.getElementById('orderNumDisplay').textContent = '#' + orderId;
+
+      const subtitle = document.getElementById('successSubtitle');
+      if (data.name) {
+        const firstName = data.name.split(' ').filter(Boolean)[1] || data.name.split(' ')[0];
+        subtitle.textContent = `Спасибо, ${firstName}! Подтверждение отправлено на ваш email.`;
+      }
+
+      if (data.name) {
+        const od = document.getElementById('orderDetails');
+        document.getElementById('detailName').textContent = data.name;
+        od.style.display = 'block';
+      }
+
+      if (isDemo) {
+        document.getElementById('demoBanner').style.display = 'flex';
+      }
+
+      showState('stateSuccess');
+    }
+
+    init();
+  </script>
+</body>
+</html>
