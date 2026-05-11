@@ -456,6 +456,80 @@ app.get('/api/payment-status/:orderId', async (req, res) => {
   res.json({ status: order.status, orderId: order.orderId, name: order.name });
 });
 
+// Создание заявки (Lite — без оплаты)
+app.post('/api/create-lead', async (req, res) => {
+  const { name, phone, email, telegram, street, city, comment } = req.body;
+
+  if (!name || !phone || !street || !city) {
+    return res.status(400).json({ error: 'Заполните обязательные поля' });
+  }
+
+  const leadId = generateOrderId();
+  const lead = {
+    orderId: leadId,
+    type: 'lead',
+    name: name.trim(),
+    phone: phone.trim(),
+    email: email?.trim() || '',
+    telegram: telegram?.trim() || '',
+    street: street.trim(),
+    city: city.trim(),
+    region: '',
+    postal: '',
+    comment: comment?.trim() || '',
+    createdAt: new Date().toISOString(),
+    status: 'new',
+  };
+
+  orders.set(leadId, lead);
+  console.log(`[Lead] Новая заявка #${leadId} — ${lead.name}, ${lead.phone}`);
+
+  // Отправляем email компании
+  try {
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: parseInt(process.env.SMTP_PORT, 10),
+      secure: process.env.SMTP_SECURE === 'true',
+      auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+    });
+
+    const paidAt = new Date().toLocaleString('ru-RU', {
+      timeZone: 'Europe/Moscow',
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit',
+    });
+
+    await transporter.sendMail({
+      from: `"ЧистоДвор Заявки" <${process.env.SMTP_USER}>`,
+      to: process.env.COMPANY_EMAIL,
+      subject: `📋 Новая заявка #${leadId} — ${lead.name}`,
+      html: `
+<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.12);">
+  <div style="background:#1a1a2e;padding:24px 28px;">
+    <h2 style="color:#2ecc40;margin:0;font-size:20px;">📋 Новая заявка (предзаказ)</h2>
+    <p style="color:#aaa;margin:6px 0 0;font-size:13px;">${paidAt} (МСК)</p>
+  </div>
+  <div style="padding:24px 28px;">
+    <table style="width:100%;border-collapse:collapse;font-size:14px;">
+      <tr><td style="padding:8px 0;color:#888;border-bottom:1px solid #f0f0f0;">Номер заявки</td><td style="padding:8px 0;border-bottom:1px solid #f0f0f0;font-weight:700;">#${leadId}</td></tr>
+      <tr><td style="padding:8px 0;color:#888;border-bottom:1px solid #f0f0f0;">ФИО</td><td style="padding:8px 0;border-bottom:1px solid #f0f0f0;font-weight:700;">${lead.name}</td></tr>
+      <tr><td style="padding:8px 0;color:#888;border-bottom:1px solid #f0f0f0;">Телефон</td><td style="padding:8px 0;border-bottom:1px solid #f0f0f0;">${lead.phone}</td></tr>
+      ${lead.email ? `<tr><td style="padding:8px 0;color:#888;border-bottom:1px solid #f0f0f0;">Email</td><td style="padding:8px 0;border-bottom:1px solid #f0f0f0;">${lead.email}</td></tr>` : ''}
+      ${lead.telegram ? `<tr><td style="padding:8px 0;color:#888;border-bottom:1px solid #f0f0f0;">Telegram</td><td style="padding:8px 0;border-bottom:1px solid #f0f0f0;">${lead.telegram}</td></tr>` : ''}
+      <tr><td style="padding:8px 0;color:#888;border-bottom:1px solid #f0f0f0;">Адрес</td><td style="padding:8px 0;border-bottom:1px solid #f0f0f0;">${lead.street}, ${lead.city}</td></tr>
+      ${lead.comment ? `<tr><td style="padding:8px 0;color:#888;">Комментарий</td><td style="padding:8px 0;">${lead.comment}</td></tr>` : ''}
+    </table>
+  </div>
+  <div style="background:#f5f5f5;padding:14px 28px;font-size:12px;color:#999;border-top:1px solid #eee;">Перезвоните клиенту в течение 24 часов.</div>
+</div>`,
+    });
+  } catch (err) {
+    console.error('[Lead] Email ошибка:', err.message);
+  }
+
+  res.json({ leadId });
+});
+
 // ─── Запуск сервера ───────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
